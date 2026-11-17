@@ -1,0 +1,122 @@
+
+==================================================================
+$ curl http://localhost:5000/health
+{"status":"ok","servicio":"api","base_de_datos":"ok"}
+
+--> HTTP 200
+
+==================================================================
+$ curl http://localhost:5000/api/ordenes
+[{"id":1,"cliente":"Ana Martínez","fecha":"2026-11-02","estado":"Pagada","total":2900.0,"num_detalles":2},{"id":2,"cliente":"Luis Hernández","fecha":"2026-11-05","estado":"Pendiente","total":1740.0,"num_detalles":3},{"id":3,"cliente":"María López","fecha":"2026-11-08","estado":"Pagada","total":3860.0,"num_detalles":2},{"id":4,"cliente":"Carlos Rivera","fecha":"2026-11-10","estado":"Anulada","total":2085.0,"num_detalles":2},{"id":5,"cliente":"Sofía Castro","fecha":"2026-11-12","estado":"Pendiente","total":4700.0,"num_detalles":2},{"id":8,"cliente":"Comercial El Progreso","fecha":"2026-11-17","estado":"Pagada","total":7700.0,"num_detalles":2}]
+
+--> HTTP 200
+
+==================================================================
+$ curl http://localhost:5000/api/ordenes/1
+{"id":1,"cliente":"Ana Martínez","fecha":"2026-11-02","estado":"Pagada","total":2900.0,"detalles":[{"id":1,"orden_id":1,"producto":"Memoria RAM DDR4 8 GB","cantidad":2,"precio_unitario":850.0,"subtotal":1700.0},{"id":2,"orden_id":1,"producto":"Disco SSD 480 GB","cantidad":1,"precio_unitario":1200.0,"subtotal":1200.0}]}
+
+--> HTTP 200
+
+==================================================================
+$ curl http://localhost:5000/api/ordenes/999
+{"error":"La orden 999 no existe."}
+
+--> HTTP 404
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes -H 'Content-Type: application/json' -d '{"cliente":"Pedro Gomez","fecha":"2026-11-17","estado":"Pendiente","detalles":[{"producto":"Laptop","cantidad":1,"precio_unitario":15000},{"producto":"Mochila","cantidad":2,"precio_unitario":450.50}]}'
+{"id":10,"cliente":"Pedro Gomez","fecha":"2026-11-17","estado":"Pendiente","total":15901.0,"detalles":[{"id":22,"orden_id":10,"producto":"Laptop","cantidad":1,"precio_unitario":15000.0,"subtotal":15000.0},{"id":23,"orden_id":10,"producto":"Mochila","cantidad":2,"precio_unitario":450.5,"subtotal":901.0}]}
+
+--> HTTP 201
+    (orden 10 creada; total = 1 x 15000 + 2 x 450.50 = 15901)
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes -H 'Content-Type: application/json' -d '{"estado":"Pagada"}'
+{"error":"El campo 'cliente' es obligatorio."}
+
+--> HTTP 400
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes -H 'Content-Type: application/json' -d '{"cliente":"X","estado":"Enviada"}'
+{"error":"El campo 'estado' debe ser uno de: Pendiente, Pagada, Anulada."}
+
+--> HTTP 400
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes -H 'Content-Type: application/json' -d 'esto no es json'
+{"error":"El cuerpo de la petición debe ser un objeto JSON."}
+
+--> HTTP 400
+
+==================================================================
+$ curl -X PUT http://localhost:5000/api/ordenes/10 -H 'Content-Type: application/json' -d '{"estado":"Pagada"}'
+{"id":10,"cliente":"Pedro Gomez","fecha":"2026-11-17","estado":"Pagada","total":15901.0,"detalles":[{"id":22,"orden_id":10,"producto":"Laptop","cantidad":1,"precio_unitario":15000.0,"subtotal":15000.0},{"id":23,"orden_id":10,"producto":"Mochila","cantidad":2,"precio_unitario":450.5,"subtotal":901.0}]}
+
+--> HTTP 200
+
+==================================================================
+$ curl -X PUT http://localhost:5000/api/ordenes/999 -H 'Content-Type: application/json' -d '{"estado":"Pagada"}'
+{"error":"La orden 999 no existe."}
+
+--> HTTP 404
+
+==================================================================
+$ curl http://localhost:5000/api/ordenes/10/detalles
+[{"id":22,"orden_id":10,"producto":"Laptop","cantidad":1,"precio_unitario":15000.0,"subtotal":15000.0},{"id":23,"orden_id":10,"producto":"Mochila","cantidad":2,"precio_unitario":450.5,"subtotal":901.0}]
+
+--> HTTP 200
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes/10/detalles -H 'Content-Type: application/json' -d '{"producto":"Mouse","cantidad":3,"precio_unitario":100}'
+{"detalle":{"id":24,"orden_id":10,"producto":"Mouse","cantidad":3,"precio_unitario":100.0,"subtotal":300.0},"total_orden":16201.0}
+
+--> HTTP 201
+    (total recalculado: 15901 + 3 x 100 = 16201)
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes/10/detalles -H 'Content-Type: application/json' -d '{"producto":"Mouse","cantidad":0,"precio_unitario":100}'
+{"error":"El campo 'cantidad' debe ser mayor que 0."}
+
+--> HTTP 400
+
+==================================================================
+$ curl -X POST http://localhost:5000/api/ordenes/999/detalles -H 'Content-Type: application/json' -d '{"producto":"Mouse","cantidad":1,"precio_unitario":100}'
+{"error":"La orden 999 no existe."}
+
+--> HTTP 404
+
+==================================================================
+$ curl -X PUT http://localhost:5000/api/detalles/24 -H 'Content-Type: application/json' -d '{"cantidad":5}'
+{"detalle":{"id":24,"orden_id":10,"producto":"Mouse","cantidad":5,"precio_unitario":100.0,"subtotal":500.0},"total_orden":16401.0}
+
+--> HTTP 200
+
+==================================================================
+$ curl -X PUT http://localhost:5000/api/detalles/999 -H 'Content-Type: application/json' -d '{"cantidad":5}'
+{"error":"El detalle 999 no existe."}
+
+--> HTTP 404
+
+==================================================================
+$ curl -X DELETE http://localhost:5000/api/detalles/24
+{"mensaje":"Detalle 24 eliminado.","orden_id":10,"total_orden":15901.0}
+
+--> HTTP 200
+
+==================================================================
+$ curl -X DELETE http://localhost:5000/api/detalles/24
+{"error":"El detalle 24 no existe."}
+
+--> HTTP 404
+
+==================================================================
+$ curl -X DELETE http://localhost:5000/api/ordenes/10
+{"mensaje":"Orden 10 eliminada junto con sus detalles.","detalles_eliminados":2}
+
+--> HTTP 200
+
+==================================================================
+$ curl http://localhost:5000/api/ordenes/10
+{"error":"La orden 10 no existe."}
+
+--> HTTP 404

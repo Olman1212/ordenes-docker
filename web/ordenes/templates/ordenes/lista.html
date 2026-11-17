@@ -1,0 +1,35 @@
+{% extends "ordenes/base.html" %}
+{% load formato %}
+{% block titulo %}Listado{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h1 style="margin:0">Órdenes</h1>
+    <a class="btn" href="{% url 'crear_orden' %}">+ Nueva orden</a>
+  </div>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th class="num">Detalles</th><th class="num">Total</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+    {% for o in ordenes %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.cliente }}</td>
+        <td>{{ o.fecha|fecha_corta }}</td>
+        <td><span class="estado {{ o.estado }}">{{ o.estado }}</span></td>
+        <td class="num">{{ o.num_detalles }}</td>
+        <td class="num">{{ o.total|moneda }}</td>
+        <td class="acciones">
+          <a class="btn sec" href="{% url 'ver_orden' o.id %}">Ver / detalles</a>
+          <a class="btn sec" href="{% url 'editar_orden' o.id %}">Editar</a>
+          <a class="btn peligro" href="{% url 'eliminar_orden' o.id %}">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No hay órdenes para mostrar.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

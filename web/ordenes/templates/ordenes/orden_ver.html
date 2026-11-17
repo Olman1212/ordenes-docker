@@ -1,0 +1,54 @@
+{% extends "ordenes/base.html" %}
+{% load formato %}
+{% block titulo %}Orden {{ orden.id }}{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <h1 style="margin:0">Orden {{ orden.id }}</h1>
+    <div class="acciones">
+      <a class="btn sec" href="{% url 'editar_orden' orden.id %}">Editar orden</a>
+      <a class="btn peligro" href="{% url 'eliminar_orden' orden.id %}">Eliminar orden</a>
+      <a class="btn sec" href="{% url 'lista_ordenes' %}">← Volver</a>
+    </div>
+  </div>
+  <p><strong>Cliente:</strong> {{ orden.cliente }} &nbsp;·&nbsp;
+     <strong>Fecha:</strong> {{ orden.fecha|fecha_corta }} &nbsp;·&nbsp;
+     <strong>Estado:</strong> <span class="estado {{ orden.estado }}">{{ orden.estado }}</span></p>
+  <p class="total">Total: {{ orden.total|moneda }}</p>
+</div>
+
+<div class="tarjeta">
+  <h2>Detalles de la orden</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Producto</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Subtotal</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+    {% for d in orden.detalles %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td>{{ d.producto }}</td>
+        <td class="num">{{ d.cantidad }}</td>
+        <td class="num">{{ d.precio_unitario|moneda }}</td>
+        <td class="num">{{ d.subtotal|moneda }}</td>
+        <td class="acciones">
+          <a class="btn sec" href="{% url 'editar_detalle' d.id %}">Editar</a>
+          <a class="btn peligro" href="{% url 'eliminar_detalle' d.id %}">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Esta orden todavía no tiene detalles.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="tarjeta">
+  <h2>Agregar detalle</h2>
+  <form method="post" action="{% url 'agregar_detalle' orden.id %}" class="fila" novalidate>
+    {% csrf_token %}
+    {{ detalle_form.as_p }}
+    <p><button class="btn" type="submit">Agregar</button></p>
+  </form>
+</div>
+{% endblock %}

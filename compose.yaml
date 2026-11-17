@@ -1,0 +1,137 @@
+# Arquitectura de 3 contenedores: web (Django) -> api (Flask) -> db (SQL Server)
+# Uso:  docker compose up -d --build
+# Los valores sensibles (contraseña de SA, clave de Django) vienen del archivo .env
+# (copie .env.example como .env). Docker Compose lee .env automáticamente.
+
+name: ordenes-docker
+
+services:
+
+  # -------------------------------------------------------------------------
+  # 1) Base de datos: imagen oficial de SQL Server 2022
+  # -------------------------------------------------------------------------
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ordenes-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
+      MSSQL_PID: "Developer"
+    volumes:
+      - ordenes-datos:/var/opt/mssql      # volumen con nombre: los datos sobreviven a "down"
+    networks:
+      - red-ordenes
+    # Sin "ports": solo la API (dentro de la red) se conecta a SQL Server.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G               # SQL Server necesita al menos 2 GB
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # 1b) Inicialización: ejecuta db/init.sql con sqlcmd y termina.
+  #     Es idempotente (no duplica tablas ni datos en cada arranque).
+  # -------------------------------------------------------------------------
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ordenes-db-init
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
+    volumes:
+      - ./db/init.sql:/init/init.sql:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["/opt/mssql-tools18/bin/sqlcmd -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -i /init/init.sql"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-ordenes
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: "no"
+
+  # -------------------------------------------------------------------------
+  # 2) API REST en Flask (imagen propia)
+  # -------------------------------------------------------------------------
+  api:
+    build: ./api
+    image: ${DOCKERHUB_USER:-olman1212}/ordenes-api:v1.0
+    container_name: ordenes-api
+    environment:
+      DB_HOST: db                  # nombre del servicio, no una IP
+      DB_PORT: "1433"
+      DB_NAME: OrdenesDB
+      DB_USER: sa
+      DB_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
+    ports:
+      - "5000:5000"                # expuesto para probar con curl / Postman
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    networks:
+      - red-ordenes
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # 3) Frontend en Django (imagen propia). Solo habla con la API.
+  # -------------------------------------------------------------------------
+  web:
+    build: ./web
+    image: ${DOCKERHUB_USER:-olman1212}/ordenes-web:v1.0
+    container_name: ordenes-web
+    environment:
+      API_URL: http://api:5000     # la API se busca por el nombre del servicio
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-clave-solo-para-desarrollo-cambiela}
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web
+    ports:
+      - "8000:8000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - red-ordenes
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/salud/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+
+networks:
+  red-ordenes:
+    name: red-ordenes
+    driver: bridge
+
+volumes:
+  ordenes-datos:
+    name: ordenes-datos

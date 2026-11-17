@@ -1,0 +1,10 @@
+# Contraseñas reales: nunca al repositorio
+.env
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+.vscode/
+.idea/

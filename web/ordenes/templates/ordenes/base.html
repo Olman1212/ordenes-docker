@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Órdenes{% endblock %} · Órdenes Docker</title>
+  <style>
+    :root { --azul:#1f4e79; --azul2:#2e75b6; --gris:#f3f5f8; --borde:#d5dbe3; --rojo:#b42318; --verde:#1a7f37; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background: var(--gris); color:#1d2733; }
+    header { background: var(--azul); color:#fff; padding: 14px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    header a { color:#fff; text-decoration:none; font-weight:600; font-size:1.15rem; }
+    header .flujo { font-size:.85rem; opacity:.9; }
+    main { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+    .tarjeta { background:#fff; border:1px solid var(--borde); border-radius:8px; padding:20px; margin-bottom:20px; }
+    h1 { font-size:1.4rem; margin:0 0 16px; }
+    h2 { font-size:1.1rem; margin:0 0 12px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:8px 10px; border-bottom:1px solid var(--borde); text-align:left; }
+    th { background:#e8eef5; font-size:.9rem; }
+    td.num, th.num { text-align:right; }
+    .btn { display:inline-block; padding:6px 12px; border-radius:6px; border:1px solid var(--azul2); background:var(--azul2); color:#fff; text-decoration:none; font-size:.9rem; cursor:pointer; font-family:inherit; }
+    .btn.sec { background:#fff; color:var(--azul2); }
+    .btn.peligro { background:var(--rojo); border-color:var(--rojo); }
+    .acciones { display:flex; gap:6px; flex-wrap:wrap; }
+    .mensaje { padding:10px 14px; border-radius:6px; margin-bottom:12px; }
+    .mensaje.success { background:#e6f4ea; border:1px solid #a7d7b4; color:var(--verde); }
+    .mensaje.error { background:#fdecea; border:1px solid #f4b4ad; color:var(--rojo); }
+    .estado { padding:2px 8px; border-radius:10px; font-size:.82rem; }
+    .estado.Pendiente { background:#fff4ce; } .estado.Pagada { background:#dff3e4; } .estado.Anulada { background:#f3dede; }
+    form.campos p { margin:0 0 12px; display:flex; flex-direction:column; gap:4px; }
+    form.campos input, form.campos select { padding:7px 9px; border:1px solid var(--borde); border-radius:6px; font-size:1rem; max-width:360px; }
+    form.fila { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    form.fila p { margin:0; display:flex; flex-direction:column; gap:4px; }
+    form.fila input { padding:7px 9px; border:1px solid var(--borde); border-radius:6px; }
+    .errorlist { color:var(--rojo); margin:0; padding-left:18px; font-size:.88rem; }
+    .total { font-size:1.2rem; font-weight:700; }
+    footer { text-align:center; color:#5b6573; font-size:.82rem; margin:24px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="{% url 'lista_ordenes' %}">Órdenes Docker</a>
+    <span class="flujo">Navegador → web (Django) → api (Flask) → db (SQL Server)</span>
+  </header>
+  <main>
+    {% for m in messages %}
+      <div class="mensaje {{ m.tags }}">{{ m }}</div>
+    {% endfor %}
+    {% block contenido %}{% endblock %}
+  </main>
+  <footer>Frontend Django · consume la API en <code>{{ API_URL }}</code></footer>
+</body>
+</html>

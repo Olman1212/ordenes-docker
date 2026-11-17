@@ -1,0 +1,19 @@
+# No enviar al contexto de construcción lo que la imagen no necesita
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.env
+.env.*
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+*.md
+.pytest_cache/
+.vscode/
+.idea/
+*.log
+db.sqlite3
+staticfiles/

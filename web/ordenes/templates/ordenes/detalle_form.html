@@ -1,0 +1,15 @@
+{% extends "ordenes/base.html" %}
+{% block titulo %}Editar detalle {{ detalle.id }}{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <h1>Editar detalle {{ detalle.id }} (orden {{ detalle.orden_id }})</h1>
+  <form method="post" class="campos" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="acciones">
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn sec" href="{% url 'ver_orden' detalle.orden_id %}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

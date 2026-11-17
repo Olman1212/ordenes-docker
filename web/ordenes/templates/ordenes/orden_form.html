@@ -1,0 +1,19 @@
+{% extends "ordenes/base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <h1>{{ titulo }}</h1>
+  <form method="post" class="campos" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="acciones">
+      <button class="btn" type="submit">Guardar</button>
+      {% if orden %}
+        <a class="btn sec" href="{% url 'ver_orden' orden.id %}">Cancelar</a>
+      {% else %}
+        <a class="btn sec" href="{% url 'lista_ordenes' %}">Cancelar</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
